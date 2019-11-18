@@ -24,15 +24,22 @@ credentials = 'creds'
 
 if not os.path.isfile(credentials):
     print("Credentials file not found, please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preffered notification email on the forth line")
+            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preffered notification email address on the forth line")
     sys.exit(1)
 
 try:
     with open(credentials, 'r') as f:
-        username, password, old_pass, to_email = [l.strip() for l in f.readlines()]
+        lines = [l.strip() for l in f.readlines()]
+        if len(lines) == 3:
+            username, password, old_pass = lines
+            to_email = username + "@tuks.co.za"
+        elif len(lines) == 4:
+            username, password, old_pass, to_email = lines
+        else:
+            raise ValueError("Invalid {}".format(credentials), "file")
 except:
     print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preffered notification email on the forth line")
+            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preffered notification email address on the forth line")
     sys.exit(1)
 
 browser = None
@@ -50,8 +57,11 @@ class elements_has_css_class(object):
 
 def login():
     print("Starting browser")
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
     global browser
-    browser = webdriver.Chrome('./chromedriver')
+    browser = webdriver.Chrome('./chromedriver', chrome_options=chrome_options)
     browser.get(list_page)
     print("Logging in")
     browser.find_element_by_id("userid_placeholder").send_keys(username)
@@ -105,15 +115,19 @@ def send_mail(message):
         sys.exit(1)
     print("Successfully sent email")
 
-login()
-mark = get_mark()
-new_mark = mark
-send_mail("Script successfully activated for " + username)
 try:
+    login()
+    mark = get_mark()
+    new_mark = mark
+    send_mail("Script successfully activated for " + username)
     while True:
         while mark == new_mark: 
             time.sleep(60)
-            new_mark = get_mark()
+            try:
+                new_mark = get_mark()
+            except:
+                login()
+                new_mark = get_mark()
         mark = new_mark
         send_mail("Hi " + username + ", you have a new mark available:\n    " + mark)
 except:
