@@ -61,7 +61,7 @@ def login():
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     global browser
-    browser = webdriver.Chrome('./chromedriver', chrome_options=chrome_options)
+    browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver', chrome_options=chrome_options)
     browser.get(list_page)
     print("Logging in")
     browser.find_element_by_id("userid_placeholder").send_keys(username)
@@ -126,6 +126,7 @@ try:
             try:
                 new_mark = get_mark()
             except:
+                browser.close()
                 login()
                 new_mark = get_mark()
         mark = new_mark
