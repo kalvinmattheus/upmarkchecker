@@ -39,7 +39,7 @@ try:
             raise ValueError("Invalid {}".format(credentials), "file")
 except:
     print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preffered notification email address on the forth line")
+            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preferred notification email address on the forth line")
     sys.exit(1)
 
 browser = None
