@@ -24,7 +24,7 @@ credentials = 'creds'
 
 if not os.path.isfile(credentials):
     print("Credentials file not found, please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preferred notification email address on the forth line")
+            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line")
     sys.exit(1)
 
 try:
@@ -39,7 +39,7 @@ try:
             raise ValueError("Invalid {}".format(credentials), "file")
 except:
     print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, true/false on the third indicating old password and preferred notification email address on the forth line")
+            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line")
     sys.exit(1)
 
 browser = None
@@ -97,7 +97,7 @@ def get_mark():
     return "0"
         
 def send_mail(message):
-    print("Sending email with: " + message)
+    print("Sending email with message: " + message)
     try:
         msg = MIMEMultipart()
         msg['From'] = username + "@tuks.co.za"
