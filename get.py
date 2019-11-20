@@ -68,7 +68,7 @@ def login():
     browser.find_element_by_id("password").send_keys(password)
     browser.find_element_by_id("loginbutton").click()
     try:
-        if old_pass:
+        if old_pass == "True":
             WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
             browser.find_element_by_partial_link_text("proceed").click()
         WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
