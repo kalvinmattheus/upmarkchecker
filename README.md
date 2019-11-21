@@ -1,6 +1,7 @@
 UP Mark Checker
 ============
-__UP Mark Checker__ will check for new marks on the UP Portal website and send an email notification when a new mark has been found.
+__UP Mark Checker__ will check for new marks on the UP Portal website for TUKS students and send an email notification when a new mark is available.
+
 
 
 Installation and Usage
@@ -19,7 +20,7 @@ Then create a file called "creds" (by default) in the pmarkchecker-master direct
 * Your UP username on the first line
 * Your UP password on the second line
 * True/False on the third indicating old password (do you have to click "proceed" after logging in on UP portal?)
-* Preferred notification email address on the fourth line (optional, @tuks.co.za used by default)
+* Preferred notification email address on the fourth line (optional, @tuks.co.za email address is used by default)
 
 For example:
 ```
