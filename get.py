@@ -21,10 +21,12 @@ import time
 list_page = 'https://upnet.up.ac.za/psc/pscsmpra/EMPLOYEE/HRMS/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL'
 raw_dir = 'raw_lists'
 credentials = 'creds'
+headless = True
+refresh_rate = 5*60 # in seconds
 
 if not os.path.isfile(credentials):
     print("Credentials file not found, please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line")
+            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line.")
     sys.exit(1)
 
 try:
@@ -37,9 +39,9 @@ try:
             username, password, old_pass, to_email = lines
         else:
             raise ValueError("Invalid {}".format(credentials), "file")
-except:
+except Exception:
     print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line")
+            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line.")
     sys.exit(1)
 
 browser = None
@@ -57,11 +59,14 @@ class elements_has_css_class(object):
 
 def login():
     print("Starting browser")
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
     global browser
-    browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver', chrome_options=chrome_options)
+    if headless:
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver', chrome_options=chrome_options)
+    else:
+        browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver')
     browser.get(list_page)
     print("Logging in")
     browser.find_element_by_id("userid_placeholder").send_keys(username)
@@ -72,7 +77,7 @@ def login():
             WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
             browser.find_element_by_partial_link_text("proceed").click()
         WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
-    except:
+    except Exception:
         print("Unable to log in")
         browser.close()
         sys.exit(1)
@@ -90,10 +95,12 @@ def get_mark():
         sys.exit(1)
     for i in items:
         item = i.text
-        if "% - " in item and ": " in item:
+        if ("% - " in item and ": " in item) or ("Admitted to supplementary exam" in item):
             print("Current mark: " + item)
             return i.text
     send_mail("Hi " + username + ", div.ps-htmlarea was not found, please check the script.")
+    browser.close()
+    sys.exit(1)
     return "0"
         
 def send_mail(message):
@@ -109,7 +116,7 @@ def send_mail(message):
         server.login(msg['From'], password)
         server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
-    except:
+    except Exception:
         print("Email server isn\'t working, be sure to allow less secure apps at https://www.google.com/settings/security/lesssecureapps for {}".format(msg['From']))
         browser.close()
         sys.exit(1)
@@ -122,17 +129,20 @@ try:
     send_mail("Script successfully activated for " + username)
     while True:
         while mark == new_mark: 
-            time.sleep(60)
+            time.sleep(refresh_rate)
             try:
                 new_mark = get_mark()
-            except:
+            except Exception:
                 browser.close()
                 login()
                 new_mark = get_mark()
+                continue
         mark = new_mark
         send_mail("Hi " + username + ", you have a new mark available:\n    " + mark)
-except:
+except Exception:
+    print("Script closed due to error")
     send_mail("Script encountered an error for " + username)
     browser.close()
     sys.exit(1)
+
 
