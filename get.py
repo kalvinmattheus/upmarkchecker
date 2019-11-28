@@ -23,10 +23,10 @@ raw_dir = 'raw_lists'
 credentials = 'creds'
 headless = True
 refresh_rate = 5*60 # in seconds
+cred_instructions = "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address (optional) on the forth line."
 
 if not os.path.isfile(credentials):
-    print("Credentials file not found, please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line.")
+    print("Credentials file not found, please create \"{}\" and".format(credentials), cred_instructions)
     sys.exit(1)
 
 try:
@@ -40,8 +40,7 @@ try:
         else:
             raise ValueError("Invalid {}".format(credentials), "file")
 except Exception:
-    print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials),
-            "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address on the forth line.")
+    print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials), cred_instructions)
     sys.exit(1)
 
 browser = None
