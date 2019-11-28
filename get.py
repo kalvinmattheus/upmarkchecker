@@ -19,11 +19,13 @@ import sys
 import time
 
 list_page = 'https://upnet.up.ac.za/psc/pscsmpra/EMPLOYEE/HRMS/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL'
-raw_dir = 'raw_lists'
 credentials = 'creds'
 headless = True
 refresh_rate = 5*60 # in seconds
-cred_instructions = "add your UP username on the first line, your UP password on the second, True/False on the third indicating old password and preferred notification email address (optional) on the forth line."
+
+cred_instructions = "add your UP portal username (with \"u\") on the first line, your UP portal password on the second and preferred notification email address (optional) on the third line."
+correct_password = False
+
 
 if not os.path.isfile(credentials):
     print("Credentials file not found, please create \"{}\" and".format(credentials), cred_instructions)
@@ -32,15 +34,17 @@ if not os.path.isfile(credentials):
 try:
     with open(credentials, 'r') as f:
         lines = [l.strip() for l in f.readlines()]
-        if len(lines) == 3:
-            username, password, old_pass = lines
+        if len(lines) == 2:
+            username, password = lines
             to_email = username + "@tuks.co.za"
-        elif len(lines) == 4:
-            username, password, old_pass, to_email = lines
+        elif len(lines) == 3:
+            username, password, to_email = lines
         else:
             raise ValueError("Invalid {}".format(credentials), "file")
+        if username[0] != "u":
+            raise ValueError("Invalid username (prefix with \"u\")")
 except Exception:
-    print("The {}".format(credentials), "file isn\'t valid", "please create \"{}\" and".format(credentials), cred_instructions)
+    print("The {}".format(credentials), "file isn\'t valid", "please create a \"{}\" file and".format(credentials), cred_instructions)
     sys.exit(1)
 
 browser = None
@@ -72,14 +76,21 @@ def login():
     browser.find_element_by_id("password").send_keys(password)
     browser.find_element_by_id("loginbutton").click()
     try:
-        if old_pass == "True":
-            WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
+        try:
+            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
+        except Exception:
+            print("Trying old password method")
+            WebDriverWait(browser, 60).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
             browser.find_element_by_partial_link_text("proceed").click()
-        WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
+            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
     except Exception:
-        print("Unable to log in")
+        if correct_password:
+            send_mail("Hi " + username + ", the script was unable to log into the UP Portal.")
+        else:
+            print("Unable to log in")
         browser.close()
         sys.exit(1)
+    correct_password = True
     print("Successfully logged in")
 
 def get_mark():

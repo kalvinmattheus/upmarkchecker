@@ -17,16 +17,14 @@ $	source venv/bin/activate    # start the virtual environment
 Before you start the script for the first time, be sure to allow less secure apps at https://www.google.com/settings/security/lesssecureapps for your @tuks.co.za email account. 
 
 Then create a file called "creds" (by default) in the pmarkchecker-master directory. The creds file should contain the following:
-* Your UP username on the first line
+* Your UP username (with "u") on the first line
 * Your UP password on the second line
-* True/False on the third indicating old password (do you have to click "proceed" after logging in on UP portal?)
 * Preferred notification email address on the fourth line (optional, @tuks.co.za email address is used by default)
 
 For example:
 ```
 u12345678
 ********
-True
 otheremail@example.com
 ```
 
