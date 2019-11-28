@@ -19,7 +19,7 @@ Before you start the script for the first time, be sure to allow less secure app
 Then create a file called "creds" (by default) in the upmarkchecker-master directory. The creds file should contain the following:
 * Your UP username (with "u") on the first line
 * Your UP password on the second line
-* Preferred notification email address on the fourth line (optional, @tuks.co.za email address is used by default)
+* Preferred notification email address on the third line (optional, @tuks.co.za email address is used by default)
 
 For example:
 ```
