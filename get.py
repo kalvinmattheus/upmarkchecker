@@ -22,6 +22,7 @@ list_page = 'https://upnet.up.ac.za/psc/pscsmpra/EMPLOYEE/HRMS/c/NUI_FRAMEWORK.P
 credentials = 'creds'
 headless = True
 refresh_rate = 5*60 # in seconds
+retry_rate = 24*60*60 # in seconds
 
 cred_instructions = "add your UP portal username (with \"u\") on the first line, your UP portal password on the second and preferred notification email address (optional) on the third line."
 correct_password = False
@@ -107,7 +108,7 @@ def get_mark():
         item = i.text
         if ("% - " in item and ": " in item) or ("Admitted to supplementary exam" in item):
             print("Current mark: " + item)
-            return i.text
+            return item
     send_mail("Hi " + username + ", div.ps-htmlarea was not found, please check the script.")
     browser.close()
     sys.exit(1)
@@ -132,27 +133,28 @@ def send_mail(message):
         sys.exit(1)
     print("Successfully sent email")
 
-try:
-    login()
-    mark = get_mark()
-    new_mark = mark
-    send_mail("Script successfully activated for " + username)
-    while True:
-        while mark == new_mark: 
-            time.sleep(refresh_rate)
-            try:
-                new_mark = get_mark()
-            except Exception:
-                browser.close()
-                login()
-                new_mark = get_mark()
-                continue
-        mark = new_mark
-        send_mail("Hi " + username + ", you have a new mark available:\n    " + mark)
-except Exception:
-    print("Script closed due to error")
-    send_mail("Script encountered an error for " + username)
-    browser.close()
-    sys.exit(1)
-
+while True:
+    try:
+        login()
+        mark = get_mark()
+        new_mark = mark
+        send_mail("Script successfully activated for " + username + ".")
+        while True:
+            while mark == new_mark: 
+                time.sleep(refresh_rate)
+                try:
+                    new_mark = get_mark()
+                except Exception:
+                    browser.close()
+                    login()
+                    new_mark = get_mark()
+                    continue
+            mark = new_mark
+            send_mail("Hi " + username + ", you have a new mark available:\n    " + mark)
+    except Exception:
+        print("Script closed due to error")
+        send_mail("Script encountered an error for " + username + ".\nRetrying in " + str(retry_rate/60/60) + " hours.")
+        browser.close()
+        correct_password = False
+    time.sleep(retry_rate)
 
