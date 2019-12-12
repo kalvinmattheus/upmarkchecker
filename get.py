@@ -14,6 +14,7 @@ from selenium.webdriver.common.by import By
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import re
 import os
 import sys
 import time
@@ -106,7 +107,7 @@ def get_mark():
         sys.exit(1)
     for i in items:
         item = i.text
-        if ("% - " in item and ": " in item) or ("Admitted to supplementary exam" in item):
+        if re.search(r'\w{3}\s\d{3}:\s', item):
             print("Current mark: " + item)
             return item
     send_mail("Hi " + username + ", div.ps-htmlarea was not found, please check the script.")
