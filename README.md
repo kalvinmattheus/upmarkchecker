@@ -25,7 +25,7 @@ u12345678
 otheremail@example.com
 ```
 
-To start the script run the following command in the same terminal:
+To start the script, run the following command in the same terminal:
 ```shell
 $	make run
 ```
@@ -38,5 +38,5 @@ $	sudo apt-get install virtualenv python3 python3-pip chromium-browser chromium-
 $	virtualenv -p python3 venv    # create a python virtual environment
 $	source venv/bin/activate    # start the virtual environment
 (venv)$	pip install -r requirements.txt    # install required software in the virtual environment
-$	make run
+$	./get.py
 ```
