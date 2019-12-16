@@ -4,7 +4,7 @@
 # mark has been found (as retrieved from UP website)
 
 # This needs to be done using selenium which allows programatically executing
-# actions in a browser (in this case chrome) because the marks have to be
+# actions in a browser (in this case chromium) because the marks have to be
 # retrieved interactively from the UP portal
 
 from selenium import webdriver
@@ -18,6 +18,9 @@ import re
 import os
 import sys
 import time
+import getpass
+import signal
+signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
 
 list_page = 'https://upnet.up.ac.za/psc/pscsmpra/EMPLOYEE/HRMS/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL'
 credentials = 'creds'
@@ -27,29 +30,62 @@ retry_rate = 24*60*60 # in seconds
 
 cred_instructions = "add your UP portal username (with \"u\") on the first line, your UP portal password on the second and preferred notification email address (optional) on the third line."
 correct_password = False
-
-
-if not os.path.isfile(credentials):
-    print("Credentials file not found, please create \"{}\" and".format(credentials), cred_instructions)
-    sys.exit(1)
-
-try:
-    with open(credentials, 'r') as f:
-        lines = [l.strip() for l in f.readlines()]
-        if len(lines) == 2:
-            username, password = lines
-            to_email = username + "@tuks.co.za"
-        elif len(lines) == 3:
-            username, password, to_email = lines
-        else:
-            raise ValueError("Invalid {}".format(credentials), "file")
-        if username[0] != "u":
-            raise ValueError("Invalid username (prefix with \"u\")")
-except Exception:
-    print("The {}".format(credentials), "file isn\'t valid", "please create a \"{}\" file and".format(credentials), cred_instructions)
-    sys.exit(1)
-
 browser = None
+
+
+def creds():
+    good_username = False
+    good_password = False
+    good_email = False
+    while not good_username:
+        username = input("Please enter your UP portal username: ")
+        if len(username) == 9:
+            if username[0] == 'u':
+                good_username = True
+        if not good_username:
+            print("Please enter a valid username (starting with u)")
+    while not good_password:
+        password = getpass.getpass("Password: ")
+        if len(password) >= 8:
+            good_password = True
+        if not good_password:
+            print("Passwords must be at least 8 characters long")
+    while not good_email:
+        to_email = input("Please enter a notiftcation email (default: " + username + "@tuks.co.za): ")
+        if to_email == "":
+            to_email = username + "@tuks.co.za"
+            good_email = True
+        elif re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", to_email):
+            good_email = True
+        if not good_email:
+            print("Please enter a valid email address")
+    f = open(credentials, "w+")
+    f.write(username + "\r\n")
+    f.write(password + "\r\n")
+    f.write(to_email)
+    f.close()
+
+def get_creds():
+    while not os.path.isfile(credentials):
+        print("For this script to access your UP marks, your login credentials are required:")
+        creds()
+    global username, password, to_email
+    try:
+        with open(credentials, 'r') as f:
+            lines = [l.strip() for l in f.readlines()]
+            if len(lines) == 2:
+                username, password = lines
+                to_email = username + "@tuks.co.za"
+            elif len(lines) == 3:
+                username, password, to_email = lines
+            else:
+                raise ValueError("Invalid {}".format(credentials), "file")
+            if username[0] != "u":
+                raise ValueError("Invalid username (prefix with \"u\")")
+    except Exception:
+        print("The {}".format(credentials), "file isn\'t valid", "please create a \"{}\" file and".format(credentials), cred_instructions)
+        sys.exit(1)
+    print("A valid", credentials, "file was found")
 
 class elements_has_css_class(object):
   def __init__(self, css_class):
@@ -78,20 +114,24 @@ def login():
     browser.find_element_by_id("password").send_keys(password)
     browser.find_element_by_id("loginbutton").click()
     try:
-        try:
-            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
-        except Exception:
-            print("Trying old password method")
-            WebDriverWait(browser, 60).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
-            browser.find_element_by_partial_link_text("proceed").click()
-            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
+        WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
     except Exception:
-        if correct_password:
-            send_mail("Hi " + username + ", the script was unable to log into the UP Portal.")
-        else:
-            print("Unable to log in")
-        browser.close()
-        sys.exit(1)
+        print("Trying old password method")
+        try:
+            WebDriverWait(browser, 6).until(EC.text_to_be_present_in_element((By.ID, 'sso_description'), "proceed"))
+        except Exception:
+            global correct_password
+            if correct_password:
+                send_mail("Hi " + username + ", the script was unable to log into the UP Portal.")
+            browser.close()
+            print("Your login has failed, please re-enter your login credentials")
+            creds()
+            get_creds()
+            login()
+            return
+        print("Using old password method")
+        browser.find_element_by_partial_link_text("proceed").click()
+        WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC14$grid$0')))
     correct_password = True
     print("Successfully logged in")
 
@@ -136,6 +176,7 @@ def send_mail(message):
 
 while True:
     try:
+        get_creds()
         login()
         mark = get_mark()
         new_mark = mark
