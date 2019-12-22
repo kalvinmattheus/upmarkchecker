@@ -95,19 +95,26 @@ class elements_has_css_class(object):
     elements = driver.find_elements_by_css_selector('div.ps-htmlarea')
     if len(elements) >= 2:
         return elements
-    else:
+    else: 
         return False
 
 def login():
-    print("Starting browser")
     global browser
     if headless:
+        print("Starting browser in headless mode")
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
-        browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver', chrome_options=chrome_options)
+        try:
+            browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver', options=chrome_options)
+        except:
+            browser = webdriver.Chrome('/usr/bin/chromedriver', options=chrome_options)
     else:
-        browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver')
+        print("Starting browser")
+        try:
+            browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver')
+        except:
+            browser = webdriver.Chrome('/usr/bin/chromedriver')
     browser.get(list_page)
     print("Logging in")
     browser.find_element_by_id("userid_placeholder").send_keys(username)
