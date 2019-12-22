@@ -14,7 +14,7 @@ git clone https://github.com/kalvinmattheus/upmarkchecker
 cd upmarkchecker
 ```
 
-Run the following command to install the neccasary software for the script to run (see below for instructions without makefile):
+Run the following command to install the necessary software for the script to run (see below for instructions without makefile):
 ```shell
 make install
 ```
@@ -22,6 +22,13 @@ make install
 To start the script, run the following command in the same folder:
 ```shell
 make run
+```
+
+Update Script
+-------------
+If you used the commands above to install the script (git not zip), you van update the script by running the following: 
+```shell
+git pull
 ```
 
 Advanced Installation and Usage (without makefile)
