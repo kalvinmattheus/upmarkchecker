@@ -190,6 +190,7 @@ while True:
         send_mail("Script successfully activated for " + username + ".")
         while True:
             while mark == new_mark: 
+                print("Waiting " + (str(refresh_rate) + " seconds" if refresh_rate <= 60 else str(refresh_rate/60) + " minutes" if refresh_rate/60 <= 60 else str(refresh_rate/60/60) + " hours") + " before checking for new marks. -- Ctrl + c to exit.")
                 time.sleep(refresh_rate)
                 try:
                     new_mark = get_mark()
