@@ -13,6 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from datetime import datetime
+import socket
 import smtplib
 import re
 import os
@@ -28,7 +30,6 @@ headless = True
 refresh_rate = 5*60 # in seconds
 retry_rate = 24*60*60 # in seconds
 
-cred_instructions = "add your UP portal username (with \"u\") on the first line, your UP portal password on the second and preferred notification email address (optional) on the third line."
 correct_password = False
 browser = None
 
@@ -83,7 +84,7 @@ def get_creds():
             if username[0] != "u":
                 raise ValueError("Invalid username (prefix with \"u\")")
     except Exception:
-        print("The {}".format(credentials), "file isn\'t valid", "please create a \"{}\" file and".format(credentials), cred_instructions)
+        print("The {}".format(credentials), "file isn\'t valid", "please create a \"{}\" file and".format(credentials), "add your UP portal username (with \"u\") on the first line, your UP portal password on the second and preferred notification email address (optional) on the third line.")
         sys.exit(1)
     print("A valid", credentials, "file was found")
 
@@ -97,6 +98,10 @@ class elements_has_css_class(object):
         return elements
     else: 
         return False
+
+def try_connect():
+    print("Testing internet connection")
+    socket.create_connection(("www.google.com", 80))
 
 def login():
     global browser
@@ -115,6 +120,11 @@ def login():
             browser = webdriver.Chrome('/usr/lib/chromium-browser/chromedriver')
         except:
             browser = webdriver.Chrome('/usr/bin/chromedriver')
+    try:
+        try_connect()
+    except OSError:
+        print("No internet connection found, please connect this computer to the internet.")
+        raise Exception("Not connected to internet")
     browser.get(list_page)
     print("Logging in")
     browser.find_element_by_id("userid_placeholder").send_keys(username)
@@ -146,20 +156,28 @@ def get_mark():
     print("Getting latest mark")
     browser.get(list_page)
     browser.switch_to.default_content()
-    WebDriverWait(browser, 60).until(elements_has_css_class("div.ps-htmlarea"))
-    items = browser.find_elements_by_css_selector('div.ps-htmlarea')
-    if len(items) == 0:
-        send_mail("Hi " + username + ", no marks were found, please check the script.")
-        browser.close()
-        sys.exit(1)
-    for i in items:
-        item = i.text
-        if re.search(r'\w{3}\s\d{3}:\s', item):
-            print("Current mark: " + item)
-            return item
-    send_mail("Hi " + username + ", div.ps-htmlarea was not found, please check the script.")
-    browser.close()
-    sys.exit(1)
+    try:
+        WebDriverWait(browser, 60).until(elements_has_css_class('div.ps-htmlarea'))
+        items = browser.find_elements_by_css_selector('div.ps-htmlarea')
+        for i in items:
+            item = i.text
+            if re.search(r'\w{3}\s\d{3}:\s', item):
+                print("Current mark: " + item)
+                return item
+    except Exception:
+        try:
+            print("div.ps-htmlarea was not found, checking for error message...")
+            WebDriverWait(browser, 6).until(EC.presence_of_element_located((By.ID, 'win0divPTNUI_LAND_REC_GROUPLET$2')))
+            browser.find_element_by_id("win0divPTNUI_LAND_REC_GROUPLET$2").click()
+            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'shortmsg')))
+            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'othermsg')))
+            WebDriverWait(browser, 60).until(EC.presence_of_element_located((By.ID, 'longmsg')))
+            print("Error found:", browser.find_element_by_id('shortmsg').text, browser.find_element_by_id('othermsg').text, browser.find_element_by_id('longmsg').text)
+        except Exception:
+            send_mail("Hi " + username + ", no \"div.ps-htmlarea\" or error message was found, please check the script.")
+            browser.close()
+            sys.exit(1)
+    raise Exception("div.ps-htmlarea was not found")
     return "0"
         
 def send_mail(message):
@@ -202,8 +220,12 @@ while True:
             mark = new_mark
             send_mail("Hi " + username + ", you have a new mark available:\n    " + mark)
     except Exception:
-        print("Script closed due to error")
-        send_mail("Script encountered an error for " + username + ".\nRetrying in " + str(retry_rate/60/60) + " hours.")
+        print("Script closed due to error at " + str(datetime.now()) + ". Retrying in " + str(retry_rate/60/60) + " hours.")
+        try:
+            try_connect()
+            send_mail("Script encountered an error for " + username + ".\nRetrying in " + str(retry_rate/60/60) + " hours.")
+        except OSError:
+            print("No internet connection, could not send error email.")
         browser.close()
         correct_password = False
     time.sleep(retry_rate)
