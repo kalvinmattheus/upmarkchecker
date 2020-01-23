@@ -11,8 +11,8 @@ install:
 	@echo "################################"
 	@echo "   Installing UP Mark Checker   "
 	@echo "################################"
-	sudo apt-get install chromium-browser chromium-chromedriver || sudo apt-get install chromium chromium-driver
-	sudo apt-get install  virtualenv python3 python3-pip
+	sudo apt-get install -y chromium-browser chromium-chromedriver || sudo apt-get install -y chromium chromium-driver
+	sudo apt-get install -y  virtualenv python3 python3-pip
 	rm -rf venv/
 	virtualenv -p python3 venv
 	. venv/bin/activate; \
